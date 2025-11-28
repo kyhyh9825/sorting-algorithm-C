@@ -1,3 +1,8 @@
+/**
+ * @file merge_sort.c
+ * @brief 병합 정렬 라이브러리 구현부 (Single, Multi-thread, Double Buffering)
+ */
+
 #if defined(_MSC_VER)
     #define RESTRICT __restrict
 #elif defined(__GNUC__) || defined(__clang__)
@@ -6,6 +11,7 @@
     #define RESTRICT
 #endif
 
+/* 분기 예측 최적화 힌트 */
 #if defined(__GNUC__) || defined(__clang__)
     #define LIKELY(x)   __builtin_expect(!!(x), 1)
     #define UNLIKELY(x) __builtin_expect(!!(x), 0)
@@ -21,10 +27,13 @@
 #include <process.h>
 #include "sorting.h"
 
+/* 병렬 처리를 수행할 최소 데이터 개수 (스레드 과생성 방지) */
 #define THRESHOLD 16384
 
+/* 구현부 내부에서 사용할 함수 포인터 타입, 가독성 개선용 */
 typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 
+/* 멀티스레드 인자 전달용 구조체 */
 typedef struct
 {
     void *arr;
@@ -36,11 +45,14 @@ typedef struct
     int num_threads;
 } ThreadArg;
 
+/* --- Internal Function Prototypes --- */
+
 static void internal_merge_sort(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr);
 static unsigned __stdcall parallel_internal_sort(void *arg);
 static void merge(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
 static int get_thread_count(void);
 
+/* 시스템의 논리 프로세서 개수 반환 */
 static int get_thread_count(void)
 {
     SYSTEM_INFO sysinfo;
@@ -48,6 +60,7 @@ static int get_thread_count(void)
     return sysinfo.dwNumberOfProcessors;
 }
 
+/* [공개 함수] 싱글 스레드 병합 정렬 */
 int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (arr == NULL || num_of_elements <= 1)
@@ -64,6 +77,7 @@ int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*
     return 0;
 }
 
+/* [공개 함수] 멀티 스레드 병합 정렬 */
 int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (arr == NULL || num_of_elements <= 1)
@@ -75,14 +89,18 @@ int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, 
     {
         return -1;
     }
+
+    /* 시스템에 맞는 적당한 스레드 수 계산 */
     int sys_cpu_count = get_thread_count();
     int cpu_count = (sys_cpu_count >= 8) ? sys_cpu_count - 2 : ((sys_cpu_count >= 4) ? sys_cpu_count - 1 : sys_cpu_count);
+
     ThreadArg initial_arg = {arr, tmp_arr, size_of_element, 0, num_of_elements - 1, cmp_func_ptr, cpu_count};
     parallel_internal_sort(&initial_arg);
     free(tmp_arr);
     return 0;
 }
 
+/* 재귀 분할 정렬 (싱글 스레드) */
 static void internal_merge_sort(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr)
 {
     if (left >= right)
@@ -95,6 +113,7 @@ static void internal_merge_sort(void *RESTRICT arr, void *RESTRICT tmp_arr, size
     merge(arr, tmp_arr, size_of_element, left, middle, right, cmp_func_ptr);
 }
 
+/* 재귀 분할 정렬 (멀티 스레드) */
 static unsigned __stdcall parallel_internal_sort(void *arg)
 {
     ThreadArg *arg_ptr = (ThreadArg *)arg;
@@ -102,6 +121,7 @@ static unsigned __stdcall parallel_internal_sort(void *arg)
     {
         return 0;
     }
+    /* 데이터가 작거나 가용 스레드가 없으면 순차 정렬로 전환 */
     if (arg_ptr->num_threads <= 1 || arg_ptr->right - arg_ptr->left < THRESHOLD)
     {
         internal_merge_sort(arg_ptr->arr, arg_ptr->tmp_arr, arg_ptr->size_of_element, arg_ptr->left, arg_ptr->right, arg_ptr->cmp_func_ptr);
@@ -116,7 +136,7 @@ static unsigned __stdcall parallel_internal_sort(void *arg)
     ThreadArg right_arg = {arg_ptr->arr, arg_ptr->tmp_arr, arg_ptr->size_of_element, middle + 1, arg_ptr->right, arg_ptr->cmp_func_ptr, right_threads};
 
     HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, parallel_internal_sort, &left_arg, 0, NULL);
-    parallel_internal_sort(&right_arg);
+    parallel_internal_sort(&right_arg); // 오른쪽은 현재 스레드에서 처리
     if (hThread != 0)
     {
         WaitForSingleObject(hThread, INFINITE);
@@ -124,12 +144,14 @@ static unsigned __stdcall parallel_internal_sort(void *arg)
     }
     else
     {
+        /* 스레드 생성 실패 시 현재 스레드에서 순차 처리 */
         internal_merge_sort(left_arg.arr, left_arg.tmp_arr, left_arg.size_of_element, left_arg.left, left_arg.right, left_arg.cmp_func_ptr);
     }
     merge(arg_ptr->arr, arg_ptr->tmp_arr, arg_ptr->size_of_element, arg_ptr->left, middle, arg_ptr->right, arg_ptr->cmp_func_ptr);
     return 0;
 }
 
+/* 병합 함수, 요소를 하나씩 병합하지 않고 대소 관계가 연속적인 구간을 찾아 memcpy로 일괄 처리 */
 static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
 {
     char *ptr_left = (char *)src + (left * size_of_element);
@@ -145,6 +167,7 @@ static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size
         if ((*cmp_func_ptr)(ptr_left, ptr_right) <= 0)
         {
             char *ptr_start = ptr_left;
+            /* 연속된 구간 탐색 */
             do
             {
                 ptr_left += size_of_element;
@@ -180,12 +203,16 @@ static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size
     }
 }
 
+/* 임시 버퍼에 병합 후 원본으로 복사 */
 static void merge(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
 {
     merge_to_buffer(tmp_arr, arr, size_of_element, left, middle, right, cmp_func_ptr);
     memcpy((char *)arr + (size_of_element * left), (char *)tmp_arr + (size_of_element * left), size_of_element * (right - left + 1));
 }
 
+/* --- Ping-Pong (더블 버퍼링) 구현 --- */
+
+/* 멀티스레드 인자 전달용 구조체, 핑퐁 함수에서만 사용됨 */
 typedef struct
 {
     void *dest;
@@ -201,6 +228,7 @@ static void internal_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t siz
 static void merge_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
 static unsigned __stdcall parallel_internal_sort_pp(void *arg);
 
+/* [공개 함수] 더블 버퍼링 기반 멀티 스레드 병합 정렬 */
 int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (arr == NULL || num_of_elements <= 1)
@@ -212,15 +240,22 @@ int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int
     {
         return -1;
     }
+    /* Ping-Pong 로직을 위한 초기 데이터 복사본 생성 */
     memcpy(src, arr, num_of_elements * size_of_element);
+
     int sys_cpu_count = get_thread_count();
     int cpu_count = (sys_cpu_count >= 8) ? sys_cpu_count - 2 : ((sys_cpu_count >= 4) ? sys_cpu_count - 1 : sys_cpu_count);
+
     ThreadArgPP initial_arg = {arr, src, size_of_element, 0, num_of_elements - 1, cmp_func_ptr, cpu_count};
     parallel_internal_sort_pp(&initial_arg);
     free(src);
     return 0;
 }
 
+/**
+ * 재귀 분할 정렬 (Ping-Pong, 멀티스레드)
+ * 재귀 깊이에 따라 src와 dest 역할을 교대
+ */
 static void internal_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr)
 {
     if (left >= right)
@@ -228,11 +263,13 @@ static void internal_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t siz
         return;
     }
     size_t middle = left + (right - left) / 2;
+    /* 다음 단계에서는 src와 dest의 역할을 바꿔 호출 */
     internal_sort_pp(src, dest, size_of_element, left, middle, cmp_func_ptr);
     internal_sort_pp(src, dest, size_of_element, middle + 1, right, cmp_func_ptr);
     merge_pp(dest, src, size_of_element, left, middle, right, cmp_func_ptr);
 }
 
+/* Ping-Pong 병합: 단순히 dest 버퍼로 합치기만 하고 src로 복사하지 않음 */
 static void merge_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
 {
     merge_to_buffer(dest, src, size_of_element, left, middle, right, cmp_func_ptr);
@@ -255,6 +292,7 @@ static unsigned __stdcall parallel_internal_sort_pp(void *arg)
     int left_threads = arg_ptr->num_threads / 2;
     int right_threads = arg_ptr->num_threads - left_threads;
 
+    /* 재귀 호출 시 src와 dest 교체 주의 */
     ThreadArgPP left_arg = {arg_ptr->src, arg_ptr->dest, arg_ptr->size_of_element, arg_ptr->left, middle, arg_ptr->cmp_func_ptr, left_threads};
     ThreadArgPP right_arg = {arg_ptr->src, arg_ptr->dest, arg_ptr->size_of_element, middle + 1, arg_ptr->right, arg_ptr->cmp_func_ptr, right_threads};
 
