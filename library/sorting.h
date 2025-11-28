@@ -13,11 +13,11 @@
 #define SORTING_H
 
 #if defined(__GNUC__) || defined(__clang__)
-    #define LIKELY(x)   __builtin_expect(!!(x), 1)
-    #define UNLIKELY(x) __builtin_expect(!!(x), 0)
+    #define SORT_LIKELY(x)   __builtin_expect(!!(x), 1)
+    #define SORT_UNLIKELY(x) __builtin_expect(!!(x), 0)
 #else
-    #define LIKELY(x)   (x)
-    #define UNLIKELY(x) (x)
+    #define SORT_LIKELY(x)   (x)
+    #define SORT_UNLIKELY(x) (x)
 #endif
 
 #include <string.h>
@@ -33,7 +33,7 @@ static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element
         return;
     }
 
-    if (LIKELY(size_of_element <= SWAP_BUF_SIZE))
+    if (SORT_LIKELY(size_of_element <= SWAP_BUF_SIZE))
     {
         char tmp[SWAP_BUF_SIZE];
         memcpy(tmp, a_ptr, size_of_element);
@@ -43,7 +43,7 @@ static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element
     else
     {
         void *tmp = malloc(size_of_element);
-        if (UNLIKELY(tmp == NULL))
+        if (SORT_UNLIKELY(tmp == NULL))
         {
             return;
         }

@@ -11,7 +11,8 @@
     #define RESTRICT
 #endif
 
-/* 분기 예측 최적화 힌트 */
+/* 분기 예측 최적화 힌트, sorting.h에 이미 정의되어 있음 */
+/*
 #if defined(__GNUC__) || defined(__clang__)
     #define LIKELY(x)   __builtin_expect(!!(x), 1)
     #define UNLIKELY(x) __builtin_expect(!!(x), 0)
@@ -19,6 +20,7 @@
     #define LIKELY(x)   (x)
     #define UNLIKELY(x) (x)
 #endif
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
