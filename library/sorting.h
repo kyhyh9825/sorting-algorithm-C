@@ -19,7 +19,7 @@
  * 
  * @param arr 정렬할 배열의 시작 주소
  * @param num_of_elements 요소의 총 개수
- * @param size_of_elements 요소 하나의 크기 (sizeof(Type))
+ * @param size_of_element 요소 하나의 크기 (sizeof(Type))
  * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
  */
 void merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
@@ -29,7 +29,7 @@ void merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (
  * 
  * @param arr 정렬할 배열의 시작 주소
  * @param num_of_elements 요소의 총 개수
- * @param size_of_elements 요소 하나의 크기 (sizeof(Type))
+ * @param size_of_element 요소 하나의 크기 (sizeof(Type))
  * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
  */
 void merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
@@ -39,7 +39,7 @@ void merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element,
  * 
  * @param arr 정렬할 배열의 시작 주소
  * @param num_of_elements 요소의 총 개수
- * @param size_of_elements 요소 하나의 크기 (sizeof(Type))
+ * @param size_of_element 요소 하나의 크기 (sizeof(Type))
  * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
  */
 void merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
