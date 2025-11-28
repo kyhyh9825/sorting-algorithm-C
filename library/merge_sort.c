@@ -6,6 +6,14 @@
 #define RESTRICT
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+    #define LIKELY(x)   __builtin_expect(!!(x), 1)
+    #define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+    #define LIKELY(x)   (x)
+    #define UNLIKELY(x) (x)
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,40 +46,41 @@ static int get_thread_count(void)
     return sysinfo.dwNumberOfProcessors;
 }
 
-void merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (arr == NULL || num_of_elements <= 1)
     {
-        return;
+        return 0;
     }
     void *tmp_arr = malloc(num_of_elements * size_of_element);
-    if (tmp_arr == NULL)
+    if (UNLIKELY(tmp_arr == NULL))
     {
         printf("Error: Memory allocation failed in merge_sort\n");
-        return;
+        return -1;
     }
     m_sort(arr, tmp_arr, size_of_element, 0, num_of_elements - 1, cmp_func_ptr);
     free(tmp_arr);
+    return 0;
 }
 
-void merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (arr == NULL || num_of_elements <= 1)
     {
-        return;
+        return 0;
     }
     void *tmp_arr = malloc(num_of_elements * size_of_element);
-    if (tmp_arr == NULL)
+    if (UNLIKELY(tmp_arr == NULL))
     {
         printf("Error: Memory allocation failed in merge_sort_multi\n");
-        return;
+        return -1;
     }
     int sys_cpu_count = get_thread_count();
-    int cpu_count = (sys_cpu_count >= 8) ? sys_cpu_count - 2 : (sys_cpu_count >= 4) ? sys_cpu_count - 1
-                                                                                    : sys_cpu_count;
+    int cpu_count = (sys_cpu_count >= 8) ? sys_cpu_count - 2 : ((sys_cpu_count >= 4) ? sys_cpu_count - 1 : sys_cpu_count);
     ThreadArg initial_arg = {arr, tmp_arr, size_of_element, 0, num_of_elements - 1, cmp_func_ptr, cpu_count};
     parallel_m_sort(&initial_arg);
     free(tmp_arr);
+    return 0;
 }
 
 static void m_sort(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
@@ -126,12 +135,12 @@ static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size
     char *ptr_left = (char *)src + (left * size_of_element);
     char *ptr_right = (char *)src + ((middle + 1) * size_of_element);
 
-    char * const ptr_left_end = (char *)src + (middle * size_of_element);
-    char * const ptr_right_end = (char *)src + (right * size_of_element);
+    char *const ptr_left_end = (char *)src + (middle * size_of_element);
+    char *const ptr_right_end = (char *)src + (right * size_of_element);
 
     char *ptr_dest = (char *)dest + (left * size_of_element);
 
-    while (ptr_left <= ptr_left_end && ptr_right <= ptr_right_end)
+    while (LIKELY(ptr_left <= ptr_left_end && ptr_right <= ptr_right_end))
     {
         if ((*cmp_func_ptr)(ptr_left, ptr_right) <= 0)
         {
@@ -139,7 +148,7 @@ static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size
             do
             {
                 ptr_left += size_of_element;
-            } while (ptr_left <= ptr_left_end && (*cmp_func_ptr)(ptr_left, ptr_right) <= 0);
+            } while (LIKELY(ptr_left <= ptr_left_end) && (*cmp_func_ptr)(ptr_left, ptr_right) <= 0);
 
             size_t bytes = ptr_left - ptr_start;
             memcpy(ptr_dest, ptr_start, bytes);
@@ -151,8 +160,8 @@ static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size
             do
             {
                 ptr_right += size_of_element;
-            } while (ptr_right <= ptr_right_end && (*cmp_func_ptr)(ptr_left, ptr_right) > 0);
-            
+            } while (LIKELY(ptr_right <= ptr_right_end) && (*cmp_func_ptr)(ptr_left, ptr_right) > 0);
+
             size_t bytes = ptr_right - ptr_start;
             memcpy(ptr_dest, ptr_start, bytes);
             ptr_dest += bytes;
@@ -192,24 +201,25 @@ static void m_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_el
 static void merge_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 static unsigned __stdcall parallel_m_sort_pp(void *arg);
 
-void merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (arr == NULL || num_of_elements <= 1)
     {
-        return;
+        return 0;
     }
     void *src = malloc(num_of_elements * size_of_element);
-    if (src == NULL)
+    if (UNLIKELY(src == NULL))
     {
         printf("Error: Memory allocation failed in merge_sort_pp\n");
-        return;
+        return -1;
     }
     memcpy(src, arr, num_of_elements * size_of_element);
     int sys_cpu_count = get_thread_count();
-    int cpu_count = (sys_cpu_count >= 8) ? sys_cpu_count - 2 : (sys_cpu_count >= 4) ? sys_cpu_count - 1 : sys_cpu_count;
+    int cpu_count = (sys_cpu_count >= 8) ? sys_cpu_count - 2 : ((sys_cpu_count >= 4) ? sys_cpu_count - 1 : sys_cpu_count);
     ThreadArgPP initial_arg = {arr, src, size_of_element, 0, num_of_elements - 1, cmp_func_ptr, cpu_count};
     parallel_m_sort_pp(&initial_arg);
     free(src);
+    return 0;
 }
 
 static void m_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))

@@ -81,7 +81,7 @@ int verify_sorted_sample(double *arr, size_t n) {
 // ==========================================
 // 4. 벤치마크 엔진
 // ==========================================
-typedef void (*SortFunction)(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+typedef int (*SortFunction)(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
 void run_test(const char *algo_name, SortFunction func, size_t count) {
     printf("\n");
