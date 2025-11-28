@@ -3,7 +3,7 @@
 #include <string.h>
 #include <windows.h>
 #include <process.h>
-#include "../library/sorting.h"
+#include "sorting.h"
 
 #define THRESHOLD 16384
 
