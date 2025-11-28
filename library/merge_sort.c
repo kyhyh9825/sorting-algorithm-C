@@ -1,9 +1,9 @@
 #if defined(_MSC_VER)
-#define RESTRICT __restrict
+    #define RESTRICT __restrict
 #elif defined(__GNUC__) || defined(__clang__)
-#define RESTRICT restrict
+    #define RESTRICT restrict
 #else
-#define RESTRICT
+    #define RESTRICT
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -23,6 +23,8 @@
 
 #define THRESHOLD 16384
 
+typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
+
 typedef struct
 {
     void *arr;
@@ -30,13 +32,13 @@ typedef struct
     size_t size_of_element;
     size_t left;
     size_t right;
-    int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr);
+    CmpFunc cmp_func_ptr;
     int num_threads;
 } ThreadArg;
 
-static void m_sort(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
-static unsigned __stdcall parallel_m_sort(void *arg);
-static void merge(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+static void internal_merge_sort(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr);
+static unsigned __stdcall parallel_internal_sort(void *arg);
+static void merge(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
 static int get_thread_count(void);
 
 static int get_thread_count(void)
@@ -55,10 +57,9 @@ int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*
     void *tmp_arr = malloc(num_of_elements * size_of_element);
     if (UNLIKELY(tmp_arr == NULL))
     {
-        printf("Error: Memory allocation failed in merge_sort\n");
         return -1;
     }
-    m_sort(arr, tmp_arr, size_of_element, 0, num_of_elements - 1, cmp_func_ptr);
+    internal_merge_sort(arr, tmp_arr, size_of_element, 0, num_of_elements - 1, cmp_func_ptr);
     free(tmp_arr);
     return 0;
 }
@@ -72,30 +73,29 @@ int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, 
     void *tmp_arr = malloc(num_of_elements * size_of_element);
     if (UNLIKELY(tmp_arr == NULL))
     {
-        printf("Error: Memory allocation failed in merge_sort_multi\n");
         return -1;
     }
     int sys_cpu_count = get_thread_count();
     int cpu_count = (sys_cpu_count >= 8) ? sys_cpu_count - 2 : ((sys_cpu_count >= 4) ? sys_cpu_count - 1 : sys_cpu_count);
     ThreadArg initial_arg = {arr, tmp_arr, size_of_element, 0, num_of_elements - 1, cmp_func_ptr, cpu_count};
-    parallel_m_sort(&initial_arg);
+    parallel_internal_sort(&initial_arg);
     free(tmp_arr);
     return 0;
 }
 
-static void m_sort(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+static void internal_merge_sort(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr)
 {
     if (left >= right)
     {
         return;
     }
     size_t middle = left + (right - left) / 2;
-    m_sort(arr, tmp_arr, size_of_element, left, middle, cmp_func_ptr);
-    m_sort(arr, tmp_arr, size_of_element, middle + 1, right, cmp_func_ptr);
+    internal_merge_sort(arr, tmp_arr, size_of_element, left, middle, cmp_func_ptr);
+    internal_merge_sort(arr, tmp_arr, size_of_element, middle + 1, right, cmp_func_ptr);
     merge(arr, tmp_arr, size_of_element, left, middle, right, cmp_func_ptr);
 }
 
-static unsigned __stdcall parallel_m_sort(void *arg)
+static unsigned __stdcall parallel_internal_sort(void *arg)
 {
     ThreadArg *arg_ptr = (ThreadArg *)arg;
     if (arg_ptr->left >= arg_ptr->right)
@@ -104,7 +104,7 @@ static unsigned __stdcall parallel_m_sort(void *arg)
     }
     if (arg_ptr->num_threads <= 1 || arg_ptr->right - arg_ptr->left < THRESHOLD)
     {
-        m_sort(arg_ptr->arr, arg_ptr->tmp_arr, arg_ptr->size_of_element, arg_ptr->left, arg_ptr->right, arg_ptr->cmp_func_ptr);
+        internal_merge_sort(arg_ptr->arr, arg_ptr->tmp_arr, arg_ptr->size_of_element, arg_ptr->left, arg_ptr->right, arg_ptr->cmp_func_ptr);
         return 0;
     }
 
@@ -115,8 +115,8 @@ static unsigned __stdcall parallel_m_sort(void *arg)
     ThreadArg left_arg = {arg_ptr->arr, arg_ptr->tmp_arr, arg_ptr->size_of_element, arg_ptr->left, middle, arg_ptr->cmp_func_ptr, left_threads};
     ThreadArg right_arg = {arg_ptr->arr, arg_ptr->tmp_arr, arg_ptr->size_of_element, middle + 1, arg_ptr->right, arg_ptr->cmp_func_ptr, right_threads};
 
-    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, parallel_m_sort, &left_arg, 0, NULL);
-    parallel_m_sort(&right_arg);
+    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, parallel_internal_sort, &left_arg, 0, NULL);
+    parallel_internal_sort(&right_arg);
     if (hThread != 0)
     {
         WaitForSingleObject(hThread, INFINITE);
@@ -124,13 +124,13 @@ static unsigned __stdcall parallel_m_sort(void *arg)
     }
     else
     {
-        m_sort(left_arg.arr, left_arg.tmp_arr, left_arg.size_of_element, left_arg.left, left_arg.right, left_arg.cmp_func_ptr);
+        internal_merge_sort(left_arg.arr, left_arg.tmp_arr, left_arg.size_of_element, left_arg.left, left_arg.right, left_arg.cmp_func_ptr);
     }
     merge(arg_ptr->arr, arg_ptr->tmp_arr, arg_ptr->size_of_element, arg_ptr->left, middle, arg_ptr->right, arg_ptr->cmp_func_ptr);
     return 0;
 }
 
-static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
 {
     char *ptr_left = (char *)src + (left * size_of_element);
     char *ptr_right = (char *)src + ((middle + 1) * size_of_element);
@@ -180,7 +180,7 @@ static void merge_to_buffer(void *RESTRICT dest, void *RESTRICT src, size_t size
     }
 }
 
-static void merge(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+static void merge(void *RESTRICT arr, void *RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
 {
     merge_to_buffer(tmp_arr, arr, size_of_element, left, middle, right, cmp_func_ptr);
     memcpy((char *)arr + (size_of_element * left), (char *)tmp_arr + (size_of_element * left), size_of_element * (right - left + 1));
@@ -193,13 +193,13 @@ typedef struct
     size_t size_of_element;
     size_t left;
     size_t right;
-    int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr);
+    CmpFunc cmp_func_ptr;
     int num_threads;
 } ThreadArgPP;
 
-static void m_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
-static void merge_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
-static unsigned __stdcall parallel_m_sort_pp(void *arg);
+static void internal_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr);
+static void merge_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
+static unsigned __stdcall parallel_internal_sort_pp(void *arg);
 
 int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
@@ -210,36 +210,35 @@ int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int
     void *src = malloc(num_of_elements * size_of_element);
     if (UNLIKELY(src == NULL))
     {
-        printf("Error: Memory allocation failed in merge_sort_pp\n");
         return -1;
     }
     memcpy(src, arr, num_of_elements * size_of_element);
     int sys_cpu_count = get_thread_count();
     int cpu_count = (sys_cpu_count >= 8) ? sys_cpu_count - 2 : ((sys_cpu_count >= 4) ? sys_cpu_count - 1 : sys_cpu_count);
     ThreadArgPP initial_arg = {arr, src, size_of_element, 0, num_of_elements - 1, cmp_func_ptr, cpu_count};
-    parallel_m_sort_pp(&initial_arg);
+    parallel_internal_sort_pp(&initial_arg);
     free(src);
     return 0;
 }
 
-static void m_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+static void internal_sort_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr)
 {
     if (left >= right)
     {
         return;
     }
     size_t middle = left + (right - left) / 2;
-    m_sort_pp(src, dest, size_of_element, left, middle, cmp_func_ptr);
-    m_sort_pp(src, dest, size_of_element, middle + 1, right, cmp_func_ptr);
+    internal_sort_pp(src, dest, size_of_element, left, middle, cmp_func_ptr);
+    internal_sort_pp(src, dest, size_of_element, middle + 1, right, cmp_func_ptr);
     merge_pp(dest, src, size_of_element, left, middle, right, cmp_func_ptr);
 }
 
-static void merge_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+static void merge_pp(void *RESTRICT dest, void *RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
 {
     merge_to_buffer(dest, src, size_of_element, left, middle, right, cmp_func_ptr);
 }
 
-static unsigned __stdcall parallel_m_sort_pp(void *arg)
+static unsigned __stdcall parallel_internal_sort_pp(void *arg)
 {
     ThreadArgPP *arg_ptr = (ThreadArgPP *)arg;
     if (arg_ptr->left >= arg_ptr->right)
@@ -248,7 +247,7 @@ static unsigned __stdcall parallel_m_sort_pp(void *arg)
     }
     if (arg_ptr->num_threads <= 1 || arg_ptr->right - arg_ptr->left < THRESHOLD)
     {
-        m_sort_pp(arg_ptr->dest, arg_ptr->src, arg_ptr->size_of_element, arg_ptr->left, arg_ptr->right, arg_ptr->cmp_func_ptr);
+        internal_sort_pp(arg_ptr->dest, arg_ptr->src, arg_ptr->size_of_element, arg_ptr->left, arg_ptr->right, arg_ptr->cmp_func_ptr);
         return 0;
     }
 
@@ -259,8 +258,8 @@ static unsigned __stdcall parallel_m_sort_pp(void *arg)
     ThreadArgPP left_arg = {arg_ptr->src, arg_ptr->dest, arg_ptr->size_of_element, arg_ptr->left, middle, arg_ptr->cmp_func_ptr, left_threads};
     ThreadArgPP right_arg = {arg_ptr->src, arg_ptr->dest, arg_ptr->size_of_element, middle + 1, arg_ptr->right, arg_ptr->cmp_func_ptr, right_threads};
 
-    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, parallel_m_sort_pp, &left_arg, 0, NULL);
-    parallel_m_sort_pp(&right_arg);
+    HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, parallel_internal_sort_pp, &left_arg, 0, NULL);
+    parallel_internal_sort_pp(&right_arg);
     if (hThread != 0)
     {
         WaitForSingleObject(hThread, INFINITE);
@@ -268,7 +267,7 @@ static unsigned __stdcall parallel_m_sort_pp(void *arg)
     }
     else
     {
-        m_sort_pp(left_arg.dest, left_arg.src, left_arg.size_of_element, left_arg.left, left_arg.right, left_arg.cmp_func_ptr);
+        internal_sort_pp(left_arg.dest, left_arg.src, left_arg.size_of_element, left_arg.left, left_arg.right, left_arg.cmp_func_ptr);
     }
     merge_pp(arg_ptr->dest, arg_ptr->src, arg_ptr->size_of_element, arg_ptr->left, middle, arg_ptr->right, arg_ptr->cmp_func_ptr);
     return 0;
