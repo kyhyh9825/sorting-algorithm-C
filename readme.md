@@ -13,7 +13,7 @@
 ```bash
 gcc -m64 -o <OUTPUT_FILENAME>.exe <BENCHMARK_SOURCE_FILENAME>.c <LIBRARY_SOURCE_FILENAME>.c -O2
 ```
-예를들어, `benchmark_merge_sort.c`를 `merge_sort.c` 라이브러리로 컴파일하고 싶다면 다음 명령어를 터미널에 실해앟면 됩니다. `/benchmark` 폴더 내에서 실행하세요.
+예를들어, `benchmark_merge_sort.c`를 `merge_sort.c` 라이브러리로 컴파일하고 싶다면 다음 명령어를 터미널에 실행하면 됩니다. `/benchmark` 폴더 내에서 실행하세요.
 
 ```bash
 gcc -m64 -o benchmark_merge_sort.exe benchmark_merge_sort.c ../library/merge_sort.c -O2
