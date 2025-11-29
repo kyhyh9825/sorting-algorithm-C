@@ -1,6 +1,6 @@
 /**
  * @file merge_sort.c
- * @brief 병합 정렬 라이브러리 구현부 (Single, Multi-thread, Double Buffering)
+ * @brief 병합 정렬 구현부 (Single, Multi-thread, Double Buffering)
  */
 
 
@@ -54,7 +54,8 @@ typedef struct ThreadArgStruct
 
 static void internal_merge_sort(void *SORT_RESTRICT arr, void *SORT_RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr);
 static unsigned __stdcall parallel_internal_sort(void *arg);
-static void merge(void *SORT_RESTRICT arr, void *SORT_RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
+static void merge_to_buffer(void *SORT_RESTRICT dest, void *SORT_RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
+static inline void merge(void *SORT_RESTRICT arr, void *SORT_RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
 static int get_thread_count(void);
 
 /* 시스템의 논리 프로세서 개수 반환 */
@@ -209,7 +210,7 @@ static void merge_to_buffer(void *SORT_RESTRICT dest, void *SORT_RESTRICT src, s
 }
 
 /* 임시 버퍼에 병합 후 원본으로 복사 */
-static void merge(void *SORT_RESTRICT arr, void *SORT_RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
+static inline void merge(void *SORT_RESTRICT arr, void *SORT_RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
 {
     merge_to_buffer(tmp_arr, arr, size_of_element, left, middle, right, cmp_func_ptr);
     memcpy((char *)arr + (size_of_element * left), (char *)tmp_arr + (size_of_element * left), size_of_element * (right - left + 1));
@@ -230,7 +231,7 @@ typedef struct ThreadArgPPStruct
 } ThreadArgPP;
 
 static void internal_sort_pp(void *SORT_RESTRICT dest, void *SORT_RESTRICT src, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr);
-static void merge_pp(void *SORT_RESTRICT dest, void *SORT_RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
+static inline void merge_pp(void *SORT_RESTRICT dest, void *SORT_RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr);
 static unsigned __stdcall parallel_internal_sort_pp(void *arg);
 
 /* [공개 함수] 더블 버퍼링 기반 멀티 스레드 병합 정렬 */
@@ -275,7 +276,7 @@ static void internal_sort_pp(void *SORT_RESTRICT dest, void *SORT_RESTRICT src, 
 }
 
 /* Ping-Pong 병합: 단순히 dest 버퍼로 합치기만 하고 src로 복사하지 않음 */
-static void merge_pp(void *SORT_RESTRICT dest, void *SORT_RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
+static inline void merge_pp(void *SORT_RESTRICT dest, void *SORT_RESTRICT src, size_t size_of_element, size_t left, size_t middle, size_t right, CmpFunc cmp_func_ptr)
 {
     merge_to_buffer(dest, src, size_of_element, left, middle, right, cmp_func_ptr);
 }

@@ -20,9 +20,9 @@ typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 
 static inline uint64_t xorshift64(void);
 static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low);
-static uint64_t random_bounded(uint64_t limit);
-static void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element);
-static int is_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
+static inline uint64_t random_bounded(uint64_t limit);
+static inline void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element);
+static inline int is_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
 static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
 
 /* [공개 함수] 보고 정렬 */
@@ -91,7 +91,7 @@ static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low)
 }
 
 /* Lemire의 방법을 이용한 Bias 없는 난수 생성 */
-static uint64_t random_bounded(uint64_t limit)
+static inline uint64_t random_bounded(uint64_t limit)
 {
     uint64_t x = xorshift64();
     uint64_t l;
@@ -109,7 +109,7 @@ static uint64_t random_bounded(uint64_t limit)
 }
 
 /* 배열 셔플 함수 */
-static void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element)
+static inline void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element)
 {
     for (size_t i = num_of_elements; i-- > 0;)
     {
@@ -121,7 +121,7 @@ static void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size
 }
 
 /* 배열 정렬 여부 확인 함수 (O(N)) */
-static int is_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
+static inline int is_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
 {
     for (size_t i = 0; i < num_of_elements - 1; i++)
     {
