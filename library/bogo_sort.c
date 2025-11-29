@@ -1,3 +1,8 @@
+/**
+ * @file bogo_sort.c
+ * @brief 재미를 위한 보고 정렬, 보고보고 정렬 구현부 (Bogo, BogoBogo)
+ */
+
 #if defined(_MSC_VER)
     #include <intrin.h>
 #endif
@@ -11,14 +16,17 @@
 
 typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 
+/* 내부 함수 프로토타입 */
+
 static inline uint64_t xorshift64(void);
 static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low);
 static uint64_t random_bounded(uint64_t limit);
-static void shuffle(void *arr, size_t num_of_elements, size_t size_of_element);
-static int is_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
-int is_bogobogo_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
+static void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element);
+static int is_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
+static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
 
-void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+/* [공개 함수] 보고 정렬 */
+void bogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (num_of_elements <= 1)
     {
@@ -30,10 +38,11 @@ void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*
     }
 }
 
+/* 64비트 난수 생성 함수 */
 static inline uint64_t xorshift64(void)
 {
     static uint64_t x = 0;
-    if (x == 0)
+    if (SORT_UNLIKELY(x == 0))
     {
         x = (uint64_t)time(NULL) ^ 234523452374537324ULL;
     }
@@ -43,6 +52,7 @@ static inline uint64_t xorshift64(void)
     return x;
 }
 
+/* 128비트 곱셉 연산 함수 (Lemire 알고리즘용) - 상위 64비트 반환, 하위 64비트는 포인터로 저장 */
 static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low)
 {
 #if defined(__SIZEOF_INT128__)
@@ -55,6 +65,7 @@ static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low)
     return _umul128(a, b, low);
 
 #else
+    /* 32비트 환경에서는 수동으로 64비트 곱셈 처리 */
     uint64_t a_lo = (uint32_t)a;
     uint64_t a_hi = a >> 32;
     uint64_t b_lo = (uint32_t)b;
@@ -79,6 +90,7 @@ static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low)
 #endif
 }
 
+/* Lemire의 방법을 이용한 Bias 없는 난수 생성 */
 static uint64_t random_bounded(uint64_t limit)
 {
     uint64_t x = xorshift64();
@@ -96,7 +108,8 @@ static uint64_t random_bounded(uint64_t limit)
     return h;
 }
 
-static void shuffle(void *arr, size_t num_of_elements, size_t size_of_element)
+/* 배열 셔플 함수 */
+static void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element)
 {
     for (size_t i = num_of_elements; i-- > 0;)
     {
@@ -107,7 +120,8 @@ static void shuffle(void *arr, size_t num_of_elements, size_t size_of_element)
     }
 }
 
-static int is_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
+/* 배열 정렬 여부 확인 함수 (O(N)) */
+static int is_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
 {
     for (size_t i = 0; i < num_of_elements - 1; i++)
     {
@@ -121,8 +135,10 @@ static int is_sorted(void *arr, size_t num_of_elements, size_t size_of_element, 
     return 1;
 }
 
-int is_bogobogo_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
+/* 보고보고 정렬 과정에서, 정렬되었는지 확인하기 위해 보고보고 정렬을 이용하여 검증하는 함수 (O(n!^n!)) */
+static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
 {
+    /* 복사본 생성 */
     void *copy = malloc(num_of_elements * size_of_element);
     if (SORT_UNLIKELY(copy == NULL))
     {
@@ -130,23 +146,27 @@ int is_bogobogo_sorted(void *arr, size_t num_of_elements, size_t size_of_element
     }
     memcpy(copy, arr, num_of_elements * size_of_element);
 
+    /* 복사본의 앞 n - 1개를 보고보고 정렬 */
     bogobogo_sort(copy, num_of_elements - 1, size_of_element, cmp_func_ptr);
 
     void *last = (char *)copy + (num_of_elements - 1) * size_of_element;
     void *prev_max = (char *)last - size_of_element;
 
+    /* n번째 요소가 정렬될 때까지 셔플 및 재정렬 */
     while (cmp_func_ptr(prev_max, last) > 0)
     {
         shuffle(copy, num_of_elements, size_of_element);
         bogobogo_sort(copy, num_of_elements - 1, size_of_element, cmp_func_ptr);
     }
 
+    /* 원본과 정렬된 복사본 비교 */
     int result = (memcmp(arr, copy, num_of_elements * size_of_element) == 0);
     free(copy);
     return result;
 }
 
-void bogobogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+/* [공개 함수] 보고보고 정렬 */
+void bogobogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (num_of_elements <= 1)
     {

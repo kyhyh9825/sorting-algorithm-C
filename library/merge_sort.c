@@ -50,7 +50,7 @@ typedef struct
     int num_threads;
 } ThreadArg;
 
-/* --- Internal Function Prototypes --- */
+/* 내부 함수 프로토타입 */
 
 static void internal_merge_sort(void *SORT_RESTRICT arr, void *SORT_RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr);
 static unsigned __stdcall parallel_internal_sort(void *arg);
@@ -68,7 +68,7 @@ static int get_thread_count(void)
 /* [공개 함수] 싱글 스레드 병합 정렬 */
 int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
-    if (arr == NULL || num_of_elements <= 1)
+    if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1))
     {
         return 0;
     }
@@ -85,7 +85,7 @@ int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*
 /* [공개 함수] 멀티 스레드 병합 정렬 */
 int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
-    if (arr == NULL || num_of_elements <= 1)
+    if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1))
     {
         return 0;
     }
@@ -142,7 +142,7 @@ static unsigned __stdcall parallel_internal_sort(void *arg)
 
     HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, parallel_internal_sort, &left_arg, 0, NULL);
     parallel_internal_sort(&right_arg); // 오른쪽은 현재 스레드에서 처리
-    if (hThread != 0)
+    if (SORT_LIKELY(hThread != 0))
     {
         WaitForSingleObject(hThread, INFINITE);
         CloseHandle(hThread);
@@ -236,7 +236,7 @@ static unsigned __stdcall parallel_internal_sort_pp(void *arg);
 /* [공개 함수] 더블 버퍼링 기반 멀티 스레드 병합 정렬 */
 int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
-    if (arr == NULL || num_of_elements <= 1)
+    if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1))
     {
         return 0;
     }
@@ -303,7 +303,7 @@ static unsigned __stdcall parallel_internal_sort_pp(void *arg)
 
     HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, parallel_internal_sort_pp, &left_arg, 0, NULL);
     parallel_internal_sort_pp(&right_arg);
-    if (hThread != 0)
+    if (SORT_LIKELY(hThread != 0))
     {
         WaitForSingleObject(hThread, INFINITE);
         CloseHandle(hThread);
