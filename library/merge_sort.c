@@ -39,7 +39,7 @@
 typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 
 /* 멀티스레드 인자 전달용 구조체 */
-typedef struct
+typedef struct ThreadArgStruct
 {
     void *arr;
     void *tmp_arr;
@@ -218,7 +218,7 @@ static void merge(void *SORT_RESTRICT arr, void *SORT_RESTRICT tmp_arr, size_t s
 /* --- Ping-Pong (더블 버퍼링) 구현 --- */
 
 /* 멀티스레드 인자 전달용 구조체, 핑퐁 함수에서만 사용됨 */
-typedef struct
+typedef struct ThreadArgPPStruct
 {
     void *dest;
     void *src;

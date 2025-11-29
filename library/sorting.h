@@ -32,8 +32,9 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#define SWAP_BUF_SIZE 256
 
+#define SWAP_BUF_SIZE 256
+/* 다양한 정렬에 사용되는 swap 함수 */
 static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element)
 {
     if (a_ptr == b_ptr)
@@ -64,22 +65,12 @@ static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element
 /**
  * @brief 싱글 스레드 병합 정렬
  * 
- * @param arr 정렬할 배열의 시작 주소
- * @param num_of_elements 요소의 총 개수
- * @param size_of_element 요소 하나의 크기 (sizeof(Type))
- * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
- * 
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
  */
 int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
 /**
  * @brief 멀티 스레드 병합 정렬
- * 
- * @param arr 정렬할 배열의 시작 주소
- * @param num_of_elements 요소의 총 개수
- * @param size_of_element 요소 하나의 크기 (sizeof(Type))
- * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
  * 
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
  */
@@ -88,11 +79,6 @@ int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, 
 /**
  * @brief 더블 버퍼링 이용 멀티 스레드 병합 정렬
  * 
- * @param arr 정렬할 배열의 시작 주소
- * @param num_of_elements 요소의 총 개수
- * @param size_of_element 요소 하나의 크기 (sizeof(Type))
- * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
- * 
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
  */
 int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
@@ -100,9 +86,17 @@ int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int
 /* heap_sort 만드는중 */
 // void heap_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
-/* bogo_sort 만드는중 */
+/**
+ * @brief 보고 정렬
+ * 
+ */
 void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
+/**
+ * @brief 보고보고 정렬
+ * 
+ * 정렬되었는지 확인하는 과정에서, 이전 n-1개의 원소를 재귀적으로 보고보고 정렬하여 확인함
+ */
 void bogobogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
 #endif // SORTING_H
