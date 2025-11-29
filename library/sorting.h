@@ -34,7 +34,7 @@
 
 #define SWAP_BUF_SIZE 256
 
-typedef struct
+typedef struct GulagStruct
 {
     void *location;
     size_t count;
@@ -76,6 +76,7 @@ static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element
  * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
  * 
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
+ * 
  */
 int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
@@ -88,6 +89,7 @@ int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*
  * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
  * 
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
+ * 
  */
 int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
@@ -100,6 +102,7 @@ int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, 
  * @param cmp_func_ptr 비교 함수 포인터 (qsort에 사용되는 비교 함수와 동일하게 작동)
  * 
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
+ * 
  */
 int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
@@ -111,7 +114,14 @@ void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*
 
 void bogobogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
-/* stalin_sort 만드는중 */
+/**
+ * @brief 스탈린 정렬: 첫 원소와 다음 원소를 비교하여 순서에 맞지 않으면 다음 원소를 굴라그(gulag) 배열로 보내 숙청
+ * 
+ * 기존 배열에는 정렬된 원소만 남음
+ * 
+ * @return 굴라그 배열의 주소 포인터 (void *)location과 숙청당한 원소의 수 size_t count를 갖는 구조체 포인터를 반환
+ * 
+ */
 Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*purge_func_ptr)(const void *a_ptr, const void *b_ptr));
 
 #endif // SORTING_H
