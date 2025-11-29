@@ -34,6 +34,12 @@
 
 #define SWAP_BUF_SIZE 256
 
+typedef struct
+{
+    void *location;
+    size_t count;
+} Gulag;
+
 static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element)
 {
     if (a_ptr == b_ptr)
@@ -104,5 +110,8 @@ int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int
 void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
 void bogobogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+
+/* stalin_sort 만드는중 */
+Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*purge_func_ptr)(const void *a_ptr, const void *b_ptr));
 
 #endif // SORTING_H

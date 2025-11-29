@@ -44,7 +44,7 @@ static inline uint64_t xorshift64(void)
     static uint64_t x = 0;
     if (SORT_UNLIKELY(x == 0))
     {
-        x = (uint64_t)time(NULL) ^ 234523452374537324ULL;
+        x = (uint64_t)time(NULL) ^ 5655625946484791727ULL;
     }
     x ^= x << 13;
     x ^= x >> 7;
