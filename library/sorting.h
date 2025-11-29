@@ -12,6 +12,14 @@
 #ifndef SORTING_H
 #define SORTING_H
 
+#if defined(_MSC_VER)
+    #define SORT_RESTRICT __restrict
+#elif defined(__GNUC__) || defined(__clang__)
+    #define SORT_RESTRICT restrict
+#else
+    #define SORT_RESTRICT
+#endif
+
 #if defined(__GNUC__) || defined(__clang__)
     #define SORT_LIKELY(x)   __builtin_expect(!!(x), 1)
     #define SORT_UNLIKELY(x) __builtin_expect(!!(x), 0)
@@ -32,7 +40,6 @@ static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element
     {
         return;
     }
-
     if (SORT_LIKELY(size_of_element <= SWAP_BUF_SIZE))
     {
         char tmp[SWAP_BUF_SIZE];

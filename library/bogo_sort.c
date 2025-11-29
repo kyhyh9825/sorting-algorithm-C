@@ -4,32 +4,39 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
+#include <time.h>
 #include "sorting.h"
 
 typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 
-static int is_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
+static inline uint64_t xorshift64(void);
+static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low);
+static uint64_t random_bounded(uint64_t limit);
 static void shuffle(void *arr, size_t num_of_elements, size_t size_of_element);
+static int is_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
+int is_bogobogo_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
 
 void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
-
+    if (num_of_elements <= 1)
+    {
+        return;
+    }
+    while (!is_sorted(arr, num_of_elements, size_of_element, cmp_func_ptr))
+    {
+        shuffle(arr, num_of_elements, size_of_element);
+    }
 }
 
-void bogobogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+static inline uint64_t xorshift64(void)
 {
-
-}
-
-static int is_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
-{
-
-}
-
-static uint64_t xorshift64(void)
-{
-    static uint64_t x = 245250329236350234;
+    static uint64_t x = 0;
+    if (x == 0)
+    {
+        x = (uint64_t)time(NULL) ^ 234523452374537324ULL;
+    }
     x ^= x << 13;
     x ^= x >> 7;
     x ^= x << 17;
@@ -43,7 +50,7 @@ static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low)
     *low = (uint64_t)result;
     return (uint64_t)(result >> 64);
 
-#elif defined(__MSC_VER) && defined(_M_X64)
+#elif defined(_MSC_VER) && defined(_M_X64)
     #pragma intrinsic(_umul128)
     return _umul128(a, b, low);
 
@@ -76,9 +83,7 @@ static uint64_t random_bounded(uint64_t limit)
 {
     uint64_t x = xorshift64();
     uint64_t l;
-
     uint64_t h = mul128(x, limit, &l);
-
     if (SORT_UNLIKELY(l < limit))
     {
         uint64_t t = -limit % limit;
@@ -93,7 +98,7 @@ static uint64_t random_bounded(uint64_t limit)
 
 static void shuffle(void *arr, size_t num_of_elements, size_t size_of_element)
 {
-    for (size_t i = num_of_elements - 1; i >= 0; i--)
+    for (size_t i = num_of_elements; i-- > 0;)
     {
         size_t j = (size_t)random_bounded(i + 1);
         char *a_ptr = (char *)arr + (i * size_of_element);
@@ -102,9 +107,53 @@ static void shuffle(void *arr, size_t num_of_elements, size_t size_of_element)
     }
 }
 
-int main(void)
+static int is_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
 {
+    for (size_t i = 0; i < num_of_elements - 1; i++)
+    {
+        void *current = (char *)arr + (i * size_of_element);
+        void *next = (char *)current + size_of_element;
+        if (cmp_func_ptr(current, next) > 0)
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
 
-    system("pause");
-    return 0;
+int is_bogobogo_sorted(void *arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
+{
+    void *copy = malloc(num_of_elements * size_of_element);
+    if (SORT_UNLIKELY(copy == NULL))
+    {
+        return 0;
+    }
+    memcpy(copy, arr, num_of_elements * size_of_element);
+
+    bogobogo_sort(copy, num_of_elements - 1, size_of_element, cmp_func_ptr);
+
+    void *last = (char *)copy + (num_of_elements - 1) * size_of_element;
+    void *prev_max = (char *)last - size_of_element;
+
+    while (cmp_func_ptr(prev_max, last) > 0)
+    {
+        shuffle(copy, num_of_elements, size_of_element);
+        bogobogo_sort(copy, num_of_elements - 1, size_of_element, cmp_func_ptr);
+    }
+
+    int result = (memcmp(arr, copy, num_of_elements * size_of_element) == 0);
+    free(copy);
+    return result;
+}
+
+void bogobogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
+{
+    if (num_of_elements <= 1)
+    {
+        return;
+    }
+    while (!is_bogobogo_sorted(arr, num_of_elements, size_of_element, cmp_func_ptr))
+    {
+        shuffle(arr, num_of_elements, size_of_element);
+    }
 }

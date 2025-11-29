@@ -213,7 +213,7 @@ int main()
         printf("[Error] Failed to allocate memory for Student test.\n");
     }
 
-    printf("\n[Info] Benchmark Completed. Press Enter to exit.\n");
+    printf("\n[Done] Benchmark Completed. Press Enter to exit.\n");
     getchar(); 
     return 0;
 }
