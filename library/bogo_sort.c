@@ -52,7 +52,7 @@ static inline uint64_t xorshift64(void)
     return x;
 }
 
-/* 128비트 곱셉 연산 함수 (Lemire 알고리즘용) - 상위 64비트 반환, 하위 64비트는 포인터로 저장 */
+/* 128비트 곱셈 연산 함수 (Lemire 알고리즘용) - 상위 64비트 반환, 하위 64비트는 포인터로 저장 */
 static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low)
 {
 #if defined(__SIZEOF_INT128__)
