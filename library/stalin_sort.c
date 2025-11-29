@@ -64,7 +64,7 @@ Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, in
     return gulag;
 }
 
-/* 숙청 당해 빈 공간이 생긴 기존 함수를 압축하는 함수 */
+/* 숙청 당해 빈 공간이 생긴 기존 배열을 압축하는 함수 */
 static void compress_arr(void *SORT_RESTRICT arr, int *is_purged, size_t num_of_elements, size_t size_of_element)
 {
     void *write_ptr = arr;
