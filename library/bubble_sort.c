@@ -21,7 +21,7 @@ void bubble_sort(void *arr, size_t num_of_elements, size_t size_of_element, int 
                 is_swapped = 1;
             }
         }
-        if (!is_swapped)
+        if (SORT_UNLIKELY(!is_swapped))
         {
             return;
         }
