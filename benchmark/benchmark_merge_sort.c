@@ -1,14 +1,3 @@
-// I used gemini because of my laziness
-
-/**
- * @file benchmark_unified.c
- * @brief Unified Merge Sort Benchmark
- * * Comparison of Single, Multi, and Multi-PP merge sort algorithms
- * using the SAME dataset size for fairness.
- * * Target duration for Single Thread: ~60 seconds max.
- * Requires 64-bit compilation.
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -37,7 +37,7 @@
 /* 다양한 정렬에 사용되는 swap 함수 */
 static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element)
 {
-    if (a_ptr == b_ptr)
+    if (SORT_UNLIKELY(a_ptr == b_ptr))
     {
         return;
     }
@@ -67,6 +67,21 @@ static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element
  * 
  */
 void bubble_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+
+
+/**
+ * @brief 삽입 정렬
+ * 
+ */
+void insertion_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+
+
+/**
+ * @brief 이진 삽입 정렬
+ * 
+ * 삽입할 자리를 이진 탐색을 이용하여 빠르게 찾음
+ */
+void insertion_sort_binary(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
 
 /**

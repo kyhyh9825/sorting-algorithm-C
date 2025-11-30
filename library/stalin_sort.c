@@ -13,6 +13,10 @@ static void compress_arr(void *SORT_RESTRICT arr, int *is_purged, size_t num_of_
 /* [공개 함수] 스탈린 정렬 */
 Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*purge_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
+    if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1 || size_of_element == 0))
+    {
+        return NULL;
+    }
     /* 수용소 할당 후 청소(calloc) */
     Gulag *gulag = (Gulag *)calloc(1, sizeof(Gulag));
     gulag->location = malloc(num_of_elements * size_of_element);

@@ -28,7 +28,7 @@ static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, s
 /* [공개 함수] 보고 정렬 */
 void bogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
-    if (num_of_elements <= 1)
+    if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1 || size_of_element == 0))
     {
         return;
     }
@@ -168,7 +168,7 @@ static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, s
 /* [공개 함수] 보고보고 정렬 */
 void bogobogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
-    if (num_of_elements <= 1)
+    if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1 || size_of_element == 0))
     {
         return;
     }

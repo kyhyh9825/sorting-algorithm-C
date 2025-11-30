@@ -1,5 +1,3 @@
-// I used gemini because of my laziness
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
