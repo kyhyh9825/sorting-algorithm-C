@@ -3,28 +3,6 @@
  * @brief 병합 정렬 구현부 (Single, Multi-thread, Double Buffering)
  */
 
-
-/*
-#if defined(_MSC_VER)
-    #define RESTRICT __restrict
-#elif defined(__GNUC__) || defined(__clang__)
-    #define RESTRICT restrict
-#else
-    #define RESTRICT
-#endif
-*/
-
-/* 분기 예측 최적화 힌트, sorting.h에 이미 정의되어 있음 */
-/*
-#if defined(__GNUC__) || defined(__clang__)
-    #define LIKELY(x)   __builtin_expect(!!(x), 1)
-    #define UNLIKELY(x) __builtin_expect(!!(x), 0)
-#else
-    #define LIKELY(x)   (x)
-    #define UNLIKELY(x) (x)
-#endif
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +13,6 @@
 /* 병렬 처리를 수행할 최소 데이터 개수 (스레드 과생성 방지) */
 #define THRESHOLD 16384
 
-/* 구현부 내부에서 사용할 함수 포인터 타입, 가독성 개선용 */
 typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 
 /* 멀티스레드 인자 전달용 구조체 */
@@ -49,8 +26,6 @@ typedef struct ThreadArgStruct
     CmpFunc cmp_func_ptr;
     int num_threads;
 } ThreadArg;
-
-/* 내부 함수 프로토타입 */
 
 static void internal_merge_sort(void *SORT_RESTRICT arr, void *SORT_RESTRICT tmp_arr, size_t size_of_element, size_t left, size_t right, CmpFunc cmp_func_ptr);
 static unsigned __stdcall parallel_internal_sort(void *arg);

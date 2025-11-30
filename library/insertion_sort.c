@@ -11,6 +11,7 @@ typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 
 static void *binary_pos_search(void *arr, void *value, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
 
+/* [공개 함수] 삽입 정렬 */
 void insertion_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1 || size_of_element == 0))
@@ -29,7 +30,7 @@ void insertion_sort(void *arr, size_t num_of_elements, size_t size_of_element, i
     else
     {
         tmp = malloc(size_of_element);
-        if (tmp == NULL)
+        if (SORT_UNLIKELY(tmp == NULL))
         {
             return;
         }
@@ -50,7 +51,7 @@ void insertion_sort(void *arr, size_t num_of_elements, size_t size_of_element, i
             }
             scan = (char *)scan - size_of_element;
         }
-        if (pos != current)
+        if (SORT_LIKELY(pos != current))
         {
             memcpy(tmp, current, size_of_element);
             memmove((char *)pos + size_of_element, pos, (char *)current - (char *)pos);
@@ -65,6 +66,7 @@ void insertion_sort(void *arr, size_t num_of_elements, size_t size_of_element, i
     }
 }
 
+/* [공개 함수] 이진 삽입 정렬 */
 void insertion_sort_binary(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
 {
     if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1 || size_of_element == 0))
@@ -83,7 +85,7 @@ void insertion_sort_binary(void *arr, size_t num_of_elements, size_t size_of_ele
     else
     {
         tmp = malloc(size_of_element);
-        if (tmp == NULL)
+        if (SORT_UNLIKELY(tmp == NULL))
         {
             return;
         }
@@ -94,7 +96,7 @@ void insertion_sort_binary(void *arr, size_t num_of_elements, size_t size_of_ele
     for (size_t i = 1; i < num_of_elements; i++)
     {
         void *pos = binary_pos_search(arr, current, i, size_of_element, cmp_func_ptr);
-        if (pos != current)
+        if (SORT_LIKELY(pos != current))
         {
             memcpy(tmp, current, size_of_element);
             memmove((char *)pos + size_of_element, pos, (char *)current - (char *)pos);
@@ -109,6 +111,7 @@ void insertion_sort_binary(void *arr, size_t num_of_elements, size_t size_of_ele
     }
 }
 
+/* 이진 삽입 정렬에서 삽입할 자리를 찾을 때 이진 탐색을 이용하여 찾는 함수 */
 static void *binary_pos_search(void *arr, void *value, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
 {
     size_t lo = 0;
