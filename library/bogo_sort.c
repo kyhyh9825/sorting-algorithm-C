@@ -16,8 +16,6 @@
 
 typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 
-/* 내부 함수 프로토타입 */
-
 static inline uint64_t xorshift64(void);
 static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low);
 static inline uint64_t random_bounded(uint64_t limit);
