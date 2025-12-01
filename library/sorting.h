@@ -85,6 +85,13 @@ void insertion_sort_binary(void *arr, size_t num_of_elements, size_t size_of_ele
 
 
 /**
+ * @brief 선택 정렬
+ * 
+ */
+void selection_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+
+
+/**
  * @brief 싱글 스레드 병합 정렬
  * 
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
