@@ -3,7 +3,6 @@
  * @brief 병합 정렬 구현부 (Single, Multi-thread, Double Buffering)
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>

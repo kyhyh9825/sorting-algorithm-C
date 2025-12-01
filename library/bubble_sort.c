@@ -3,7 +3,7 @@
  * @brief 버블 정렬 구현부
  */
 
-#include <stdio.h>
+#include <stddef.h>
 #include "sorting.h"
 
 /* [공개 함수] 버블 정렬 */

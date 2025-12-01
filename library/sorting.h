@@ -28,9 +28,8 @@
     #define SORT_UNLIKELY(x) (x)
 #endif
 
-#include <string.h>
 #include <stdlib.h>
-#include <stddef.h>
+#include <string.h>
 
 #define SWAP_BUF_SIZE 256
 
