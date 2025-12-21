@@ -34,31 +34,15 @@
 #define SWAP_BUF_SIZE 256
 
 /* 다양한 정렬에 사용되는 swap 함수 */
-static inline void generic_swap(void *a_ptr, void *b_ptr, size_t size_of_element)
+static inline void generic_swap(void *a_ptr, void *b_ptr, void *tmp_buf, size_t size_of_element)
 {
     if (SORT_UNLIKELY(a_ptr == b_ptr))
     {
         return;
     }
-    if (SORT_LIKELY(size_of_element <= SWAP_BUF_SIZE))
-    {
-        char tmp[SWAP_BUF_SIZE];
-        memcpy(tmp, a_ptr, size_of_element);
-        memcpy(a_ptr, b_ptr, size_of_element);
-        memcpy(b_ptr, tmp, size_of_element);
-    }
-    else
-    {
-        void *tmp = malloc(size_of_element);
-        if (SORT_UNLIKELY(tmp == NULL))
-        {
-            return;
-        }
-        memcpy(tmp, a_ptr, size_of_element);
-        memcpy(a_ptr, b_ptr, size_of_element);
-        memcpy(b_ptr, tmp, size_of_element);
-        free(tmp);
-    }
+    memcpy(tmp_buf, a_ptr, size_of_element);
+    memcpy(a_ptr, b_ptr, size_of_element);
+    memcpy(b_ptr, tmp_buf, size_of_element);
 }
 
 /**
@@ -108,6 +92,12 @@ int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, 
  * 
  */
 int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+
+/**
+ * @brief 힙 정렬
+ * 
+ */
+void heap_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
 
 
 /**
