@@ -7,7 +7,6 @@
     #include <intrin.h>
 #endif
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -19,9 +18,10 @@ typedef int (*CmpFunc)(const void *a_ptr, const void *b_ptr);
 static inline uint64_t xorshift64(void);
 static inline uint64_t mul128(uint64_t a, uint64_t b, uint64_t *low);
 static inline uint64_t random_bounded(uint64_t limit);
-static inline void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element);
+static inline void shuffle(void *SORT_RESTRICT arr, void *tmp_buf, size_t num_of_elements, size_t size_of_element);
 static inline int is_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
-static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
+static int is_bogobogo_sorted(void *SORT_RESTRICT arr, void *tmp_buf, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
+static inline void internal_bogobogo(void *SORT_RESTRICT arr, void *tmp_buf, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr);
 
 /* [공개 함수] 보고 정렬 */
 void bogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr))
@@ -30,9 +30,33 @@ void bogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*
     {
         return;
     }
+
+    char stack_buf[SWAP_BUF_SIZE];
+    void *tmp_buf = NULL;
+    int is_heap = 0;
+
+    if (SORT_LIKELY(size_of_element <= SWAP_BUF_SIZE))
+    {
+        tmp_buf = stack_buf;
+    }
+    else
+    {
+        tmp_buf = malloc(size_of_element);
+        if (SORT_UNLIKELY(tmp_buf == NULL))
+        {
+            return;
+        }
+        is_heap = 1;
+    }
+
     while (!is_sorted(arr, num_of_elements, size_of_element, cmp_func_ptr))
     {
-        shuffle(arr, num_of_elements, size_of_element);
+        shuffle(arr, tmp_buf, num_of_elements, size_of_element);
+    }
+
+    if (is_heap)
+    {
+        free(tmp_buf);
     }
 }
 
@@ -107,14 +131,14 @@ static inline uint64_t random_bounded(uint64_t limit)
 }
 
 /* 배열 셔플 함수 */
-static inline void shuffle(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element)
+static inline void shuffle(void *SORT_RESTRICT arr, void *tmp_buf, size_t num_of_elements, size_t size_of_element)
 {
     for (size_t i = num_of_elements; i-- > 0;)
     {
         size_t j = (size_t)random_bounded(i + 1);
         char *a_ptr = (char *)arr + (i * size_of_element);
         char *b_ptr = (char *)arr + (j * size_of_element);
-        generic_swap(a_ptr, b_ptr, size_of_element);
+        generic_swap(a_ptr, b_ptr, tmp_buf, size_of_element);
     }
 }
 
@@ -134,8 +158,13 @@ static inline int is_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, siz
 }
 
 /* 보고보고 정렬 과정에서, 정렬되었는지 확인하기 위해 보고보고 정렬을 이용하여 검증하는 함수 (O(n!^n!)) */
-static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
+static int is_bogobogo_sorted(void *SORT_RESTRICT arr, void *tmp_buf, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
 {
+    if (num_of_elements <= 1)
+    {
+        return 1;
+    }
+
     /* 복사본 생성 */
     void *copy = malloc(num_of_elements * size_of_element);
     if (SORT_UNLIKELY(copy == NULL))
@@ -145,7 +174,7 @@ static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, s
     memcpy(copy, arr, num_of_elements * size_of_element);
 
     /* 복사본의 앞 n - 1개를 보고보고 정렬 */
-    bogobogo_sort(copy, num_of_elements - 1, size_of_element, cmp_func_ptr);
+    internal_bogobogo(copy, tmp_buf, num_of_elements - 1, size_of_element, cmp_func_ptr);
 
     void *last = (char *)copy + (num_of_elements - 1) * size_of_element;
     void *prev_max = (char *)last - size_of_element;
@@ -153,8 +182,8 @@ static int is_bogobogo_sorted(void *SORT_RESTRICT arr, size_t num_of_elements, s
     /* n번째 요소가 정렬될 때까지 셔플 및 재정렬 */
     while (cmp_func_ptr(prev_max, last) > 0)
     {
-        shuffle(copy, num_of_elements, size_of_element);
-        bogobogo_sort(copy, num_of_elements - 1, size_of_element, cmp_func_ptr);
+        shuffle(copy, tmp_buf, num_of_elements, size_of_element);
+        internal_bogobogo(copy, tmp_buf, num_of_elements - 1, size_of_element, cmp_func_ptr);
     }
 
     /* 원본과 정렬된 복사본 비교 */
@@ -170,8 +199,36 @@ void bogobogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, in
     {
         return;
     }
-    while (!is_bogobogo_sorted(arr, num_of_elements, size_of_element, cmp_func_ptr))
+
+    char stack_buf[SWAP_BUF_SIZE];
+    void *tmp_buf = NULL;
+    int is_heap = 0;
+
+    if (SORT_LIKELY(size_of_element <= SWAP_BUF_SIZE))
     {
-        shuffle(arr, num_of_elements, size_of_element);
+        tmp_buf = stack_buf;
+    }
+    else
+    {
+        tmp_buf = malloc(size_of_element);
+        if (SORT_UNLIKELY(tmp_buf == NULL))
+        {
+            return;
+        }
+        is_heap = 1;
+    }
+
+    internal_bogobogo(arr, tmp_buf, num_of_elements, size_of_element, cmp_func_ptr);
+    if (is_heap)
+    {
+        free(tmp_buf);
+    }
+}
+
+static inline void internal_bogobogo(void *SORT_RESTRICT arr, void *tmp_buf, size_t num_of_elements, size_t size_of_element, CmpFunc cmp_func_ptr)
+{
+    while (!is_bogobogo_sorted(arr, tmp_buf, num_of_elements, size_of_element, cmp_func_ptr))
+    {
+        shuffle(arr, tmp_buf, num_of_elements, size_of_element);
     }
 }

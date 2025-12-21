@@ -3,7 +3,7 @@
  * @brief 삽입 정렬 구현부 (Normal, Binary)
  */
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "sorting.h"
 

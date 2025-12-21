@@ -3,7 +3,7 @@
  * @brief 버블 정렬 구현부
  */
 
-#include <stdio.h>
+#include <stddef.h>
 #include "sorting.h"
 
 /* [공개 함수] 버블 정렬 */
@@ -13,6 +13,25 @@ void bubble_sort(void *arr, size_t num_of_elements, size_t size_of_element, int 
     {
         return;
     }
+
+    char stack_buf[SWAP_BUF_SIZE];
+    void *tmp_buf = NULL;
+    int is_heap = 0;
+
+    if (SORT_LIKELY(size_of_element <= SWAP_BUF_SIZE))
+    {
+        tmp_buf = stack_buf;
+    }
+    else
+    {
+        tmp_buf = malloc(size_of_element);
+        if (SORT_UNLIKELY(tmp_buf == NULL))
+        {
+            return;
+        }
+        is_heap = 1;
+    }
+
     for (size_t i = num_of_elements - 1; i > 0; i--)
     {
         int is_swapped = 0;
@@ -22,7 +41,7 @@ void bubble_sort(void *arr, size_t num_of_elements, size_t size_of_element, int 
         {
             if (cmp_func_ptr(current, next) > 0)
             {
-                generic_swap(current, next, size_of_element);
+                generic_swap(current, next, tmp_buf, size_of_element);
                 is_swapped = 1;
             }
             current = (char *)current + size_of_element;
@@ -30,7 +49,15 @@ void bubble_sort(void *arr, size_t num_of_elements, size_t size_of_element, int 
         }
         if (SORT_UNLIKELY(!is_swapped))
         {
+            if (is_heap)
+            {
+                free(tmp_buf);
+            }
             return;
         }
+    }
+    if (is_heap)
+    {
+        free(tmp_buf);
     }
 }

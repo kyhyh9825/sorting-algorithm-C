@@ -3,7 +3,6 @@
  * @brief 재미를 위한 스탈린 정렬 구현부
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "sorting.h"
