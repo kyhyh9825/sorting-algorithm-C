@@ -10,7 +10,7 @@
 static void compress_arr(void *SORT_RESTRICT arr, int *is_purged, size_t num_of_elements, size_t size_of_element);
 
 /* [공개 함수] 스탈린 정렬 */
-Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*purge_func_ptr)(const void *a_ptr, const void *b_ptr))
+Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*purge_func)(const void *a_ptr, const void *b_ptr))
 {
     if (SORT_UNLIKELY(arr == NULL || num_of_elements <= 1 || size_of_element == 0))
     {
@@ -25,7 +25,7 @@ Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, in
         return NULL;
     }
 
-    void *current_gulag_ptr = gulag->location;
+    char *current_gulag_ptr = gulag->location;
     /* 숙청 명부 is_purged를 만들고, 이후 배열 압축(compress_arr)에 사용됨 */
     int *is_purged = (int *)calloc(num_of_elements, sizeof(int));
     if (SORT_UNLIKELY(is_purged == NULL))
@@ -36,20 +36,20 @@ Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, in
     }
 
     /* 첫 원소를 기준으로 먼저 삼고 */
-    void *max_element = arr;
+    char *supreme_leader = (char *)arr;
     for (size_t i = 1; i < num_of_elements; i++)
     {
-        void *current = (char *)arr + (i * size_of_element);
-        if (purge_func_ptr(max_element, current) > 0) // 비교 대상 원소가 기준 원소보다 작으면
+        char *current = (char *)arr + (i * size_of_element);
+        if (purge_func(supreme_leader, current) > 0) // 비교 대상 원소가 기준 원소보다 작으면
         {
             memcpy(current_gulag_ptr, current, size_of_element); // 괘씸하므로 숙청
-            current_gulag_ptr = (char *)current_gulag_ptr + size_of_element;
+            current_gulag_ptr += size_of_element;
             is_purged[i] = 1;
             gulag->count++;
         }
         else
         {
-            max_element = current; // 아니면 비교 대상 원소를 기준 원소로 변경
+            supreme_leader = current; // 아니면 비교 대상 원소를 기준 원소로 변경
         }
     }
     compress_arr(arr, is_purged, num_of_elements, size_of_element);
@@ -75,8 +75,8 @@ Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, in
 /* 숙청 당해 빈 공간이 생긴 기존 배열을 압축하는 함수 */
 static void compress_arr(void *SORT_RESTRICT arr, int *is_purged, size_t num_of_elements, size_t size_of_element)
 {
-    void *write_ptr = arr;
-    void *read_ptr = arr;
+    char *write_ptr = arr;
+    char *read_ptr = arr;
 
     for (size_t i  = 0; i < num_of_elements; i++)
     {
@@ -86,8 +86,8 @@ static void compress_arr(void *SORT_RESTRICT arr, int *is_purged, size_t num_of_
             {
                 memcpy(write_ptr, read_ptr, size_of_element);
             }
-            write_ptr = (char *)write_ptr + size_of_element;
+            write_ptr += size_of_element;
         }
-        read_ptr = (char *)read_ptr + size_of_element;
+        read_ptr += size_of_element;
     }
 }

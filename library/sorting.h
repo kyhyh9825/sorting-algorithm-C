@@ -49,14 +49,14 @@ static inline void generic_swap(void *a_ptr, void *b_ptr, void *tmp_buf, size_t 
  * @brief 버블 정렬
  * 
  */
-void bubble_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+void bubble_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 /**
  * @brief 삽입 정렬
  * 
  */
-void insertion_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+void insertion_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 /**
@@ -64,14 +64,14 @@ void insertion_sort(void *arr, size_t num_of_elements, size_t size_of_element, i
  * 
  * 삽입할 자리를 이진 탐색을 이용하여 빠르게 찾음
  */
-void insertion_sort_binary(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+void insertion_sort_binary(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 /**
  * @brief 선택 정렬
  * 
  */
-void selection_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+void selection_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 /**
@@ -80,7 +80,7 @@ void selection_sort(void *arr, size_t num_of_elements, size_t size_of_element, i
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
  * 
  */
-int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 /**
@@ -89,7 +89,7 @@ int merge_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
  * 
  */
-int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 /**
@@ -98,20 +98,20 @@ int merge_sort_multi(void *arr, size_t num_of_elements, size_t size_of_element, 
  * @return 정렬에 필요한 메모리 할당에 실패하면 -1을, 성공하면 0을 반환
  * 
  */
-int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+int merge_sort_pp(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 /**
  * @brief 힙 정렬
  * 
  */
-void heap_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+void heap_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 /**
  * @brief 보고 정렬
  * 
  */
-void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 /**
@@ -119,7 +119,7 @@ void bogo_sort(void *arr ,size_t num_of_elements, size_t size_of_element, int (*
  * 
  * 정렬되었는지 확인하는 과정에서, 이전 n-1개의 원소를 재귀적으로 보고보고 정렬하여 확인함
  */
-void bogobogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func_ptr)(const void *a_ptr, const void *b_ptr));
+void bogobogo_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*cmp_func)(const void *a_ptr, const void *b_ptr));
 
 
 typedef struct GulagStruct
@@ -136,6 +136,6 @@ typedef struct GulagStruct
  * @return 굴라그 배열의 주소 포인터 (void *)location과 숙청당한 원소의 수 size_t count를 갖는 구조체 포인터를 반환
  * 
  */
-Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*purge_func_ptr)(const void *a_ptr, const void *b_ptr));
+Gulag *stalin_sort(void *arr, size_t num_of_elements, size_t size_of_element, int (*purge_func)(const void *a_ptr, const void *b_ptr));
 
 #endif // SORTING_H
